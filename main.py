@@ -7,9 +7,7 @@ from bot import bot, dp
 
 import asyncio
 import logging
-import os
 
-from aiogram import Dispatcher, Bot
 from aiogram.types import BotCommand, BotCommandScopeDefault
 
 

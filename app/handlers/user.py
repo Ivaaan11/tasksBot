@@ -20,11 +20,12 @@ router = Router()
 async def cmd_start(message: Message):
     await rq.add_new_user(message.from_user.id, message.from_user.username)
     await message.answer(f'Hello {message.from_user.first_name}!')
+    await message.answer('Welcome to the Tasks bot!', reply_markup=k.menu_kb())
 
 
 @router.message(Command('menu'))
 async def cmd_menu(message: Message):
-    await message.answer('Main menu')
+    await message.answer('Main menu:', reply_markup=k.menu_kb())
 
 
 

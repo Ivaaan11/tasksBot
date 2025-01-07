@@ -33,6 +33,18 @@ def yes_no_kb() -> InlineKeyboardMarkup:
     return builder.as_markup()
 
 
+def menu_kb() -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    
+    builder.button(text='Main menu', callback_data='main_menu')
+    builder.button(text='Add a new task', callback_data='add_task')
+    builder.button(text='View your tasks', callback_data='view_tasks')
+    builder.button(text='Delete a task', callback_data='delete_task')
+    builder.button(text='Edit a task', callback_data='edit_task')
+
+    return builder.adjust(2).as_markup()
+
+
 
 # payments
 
