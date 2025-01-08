@@ -108,19 +108,24 @@ async def task_correct(callback: CallbackQuery, state: FSMContext):
 async def cmd_tasks(message: Message):
     tasks = await rq.get_tasks(message.from_user.id)
 
-    answer = ''
-    i = 1
-    for task in tasks:
-        answer = f'''{answer}
-{i}. {task[0]}
-    {str(task[1])[:5]}
-'''
-        i += 1
-    
-    if answer:
-        await message.answer(f'Your tasks: \n{answer} \nTo delete a task /delete \nTo add a new task /add')
-    else:
+    if not tasks:
         await message.answer('You have no tasks')
+        return
+
+    await message.answer(f'Your tasks:', reply_markup=await k.tasks_list(message.from_user.id))
+    await message.answer('To delete a task /delete \nTo add a new task /add')
+
+
+@router.callback_query(F.data.startswith('task_'))
+async def task_actions(callback: CallbackQuery):
+    await callback.answer()
+
+    task_id = callback.data.split('_')[1]
+    task = await rq.get_task_by_id(task_id)
+    task_name = task[0]
+    task_time = str(task[1])[:5]
+
+    await callback.message.answer(f'{task_name} \n {task_time}', reply_markup=k.task_actions_kb())
 
 
 
@@ -138,7 +143,7 @@ async def cmd_delete(message: Message, state: FSMContext):
 
     await state.set_state(DeleteTask.task_id)
 
-    await message.answer('Select a task to delete:', reply_markup=await k.task_list_kb(message.from_user.id))
+    await message.answer('Select a task to delete:', reply_markup=await k.deleting_tasks_kb(message.from_user.id))
 
 
 @router.callback_query(DeleteTask.task_id)

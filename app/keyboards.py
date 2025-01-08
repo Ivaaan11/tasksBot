@@ -46,9 +46,28 @@ def menu_kb() -> InlineKeyboardMarkup:
     return builder.adjust(2).as_markup()
 
 
-async def task_list_kb(user_id) -> InlineKeyboardMarkup:
-    builder = InlineKeyboardBuilder()
+async def tasks_list(user_id):
     tasks = await rq.get_tasks(user_id)
+    builder = InlineKeyboardBuilder()
+
+    for task in tasks:
+        builder.button(text=task[0], callback_data=f'task_{task[2]}')
+    
+    return builder.adjust(2).as_markup()
+
+
+def task_actions_kb():
+    builder = InlineKeyboardBuilder()
+
+    builder.button(text='edit', callback_data='edit_task')
+    builder.button(text='delete', callback_data='delete_task')
+
+    return builder.as_markup()
+
+
+async def deleting_tasks_kb(user_id) -> InlineKeyboardMarkup:
+    tasks = await rq.get_tasks(user_id)
+    builder = InlineKeyboardBuilder()
 
     builder.row(InlineKeyboardButton(text = 'cancel', callback_data='cancel_deleting'))
     for task in tasks:
