@@ -8,6 +8,7 @@ from aiogram.utils.keyboard import (
     InlineKeyboardBuilder,
     KeyboardBuilder
 )
+import app.database.requests as rq
 
 
 
@@ -43,6 +44,17 @@ def menu_kb() -> InlineKeyboardMarkup:
     builder.button(text='Edit a task', callback_data='edit_task')
 
     return builder.adjust(2).as_markup()
+
+
+async def task_list_kb(user_id) -> InlineKeyboardMarkup:
+    builder = InlineKeyboardBuilder()
+    tasks = await rq.get_tasks(user_id)
+
+    builder.row(InlineKeyboardButton(text = 'cancel', callback_data='cancel_deleting'))
+    for task in tasks:
+        builder.add(InlineKeyboardButton(text=str(task[0]), callback_data=str(task[2])))
+    
+    return builder.adjust(1, 2).as_markup()
 
 
 

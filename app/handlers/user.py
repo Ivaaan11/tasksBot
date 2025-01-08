@@ -106,8 +106,6 @@ async def task_correct(callback: CallbackQuery, state: FSMContext):
 
 @router.message(Command('tasks'))
 async def cmd_tasks(message: Message):
-    print(scheduler.get_jobs())
-
     tasks = await rq.get_tasks(message.from_user.id)
 
     answer = ''
@@ -120,7 +118,7 @@ async def cmd_tasks(message: Message):
         i += 1
     
     if answer:
-        await message.answer(f'Your tasks: \n{answer} \nTo delete a task /delete <task number> \nTo add a new task /add')
+        await message.answer(f'Your tasks: \n{answer} \nTo delete a task /delete \nTo add a new task /add')
     else:
         await message.answer('You have no tasks')
 
@@ -128,33 +126,42 @@ async def cmd_tasks(message: Message):
 
 # deleting tasks
 
-@router.message(F.text.startswith('/delete'))
-async def cmd_delete(message: Message):
-    args = message.text.split(' ')
+class DeleteTask(StatesGroup):
+    task_id = State()
 
-    if len(args) < 2:
-        await message.answer('Your request must look like: \n/ delete <task number> \n e.g. /delete 2')
+
+@router.message(Command('delete'))
+async def cmd_delete(message: Message, state: FSMContext):
+    if not await rq.get_tasks(message.from_user.id):
+        await message.answer('You have no tasks')
         return
+
+    await state.set_state(DeleteTask.task_id)
+
+    await message.answer('Select a task to delete:', reply_markup=await k.task_list_kb(message.from_user.id))
+
+
+@router.callback_query(DeleteTask.task_id)
+async def deleting_task(callback: CallbackQuery, state: FSMContext):
+    await callback.answer()
+
+    if callback.data == 'cancel_deleting':
+        await callback.message.answer('Action canceled')
+        await state.clear()
+        return
+
+    await state.update_data(task_id = callback.data)
+    task_to_delete = await rq.get_task_by_id(callback.data)
+    task_id = task_to_delete[2]
+
+    if scheduler.get_job(task_id):
+        scheduler.remove_job(task_id)
     
-    try:
-        tasks = await rq.get_tasks(message.from_user.id)
-        task_to_delete_number = int(args[1])
-        
-        if 0 < task_to_delete_number <= len(tasks):
-            task_to_delete = tasks[task_to_delete_number - 1]
+    await rq.delete_reminder(task_id)
+    await rq.delete_task(task_id)
 
-            if scheduler.get_job(str(task_to_delete[2])):
-                scheduler.remove_job(str(task_to_delete[2]))
-            
-            await rq.delete_reminder(task_to_delete[2])
-            await rq.delete_task(task_to_delete[2])
-
-            await message.answer(f'Task <b>{task_to_delete[0]}</b> has been deleted', parse_mode='HTML')
-        else:
-            await message.answer(f'Task {task_to_delete_number}  not found')
-
-    except ValueError:
-        await message.answer('Invalid task number. Please provide a valid number')
+    await callback.message.answer(f'Task <b>{task_id}</b> has been deleted', parse_mode='HTML')
+    await state.clear()
 
 
 

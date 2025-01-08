@@ -47,6 +47,14 @@ async def get_tasks(user_id):
         return tasks
 
 
+async def get_task_by_id(task_id):
+    async with async_session() as session:
+        result = await session.scalar(select(Task).where(Task.id == task_id))
+        task = (result.name, result.time, result.id)
+
+        return task
+
+
 async def get_times():
     async with async_session() as session:
         result = await session.execute(select(Task.tg_id, Task.time, Task.name))
